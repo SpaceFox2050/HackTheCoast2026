@@ -5,6 +5,19 @@
 #include <spo2_algorithm.h>
 #include <ThreeWire.h>
 #include <RtcDS1302.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SDA_PIN 21
+#define SCL_PIN 22
+
+// OLED display configuration
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define SCREEN_ADDRESS 0x3C
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // DS1302 pins (ESP32 GPIOs)
 static const uint8_t kClkPin = 18;
@@ -22,20 +35,22 @@ RtcDS1302<ThreeWire> rtc(rtcWire);
 RtcDateTime alarmTime;
 bool alarmTriggered = false;
 
-MAX30105 maxSensor;
+MAX30105 particleSensor;
 
-static const uint8_t kSampleRateHz = 100;
-static const uint8_t kBufferSize = 100;
-static const uint32_t  kFingerThreshold = 1000;
+// Heart rate and SpO2 calculation variables
+const int buffersize = 100;
+uint32_t irBuffer[buffersize];
+uint32_t redBuffer[buffersize];
+uint8_t bufferIndex = 0;
 
-uint32_t irBuffer[kBufferSize];
-uint32_t redBuffer[kBufferSize];
-uint8_t sampleIndex = 0;
-
-int32_t lastSpO2 = 0;
-int32_t lastHeartRate = 0;
-int8_t validSpO2 = 0;
+int32_t spo2 = 0;
+int8_t validSpo2 = 0;
+int32_t heartRate = 0;
 int8_t validHeartRate = 0;
+
+static const uint32_t kFingerThreshold = 15000;  // IR value threshold for finger detection
+
+
 
 static void PrintDateTime(const RtcDateTime &dt) {
   char buf[32];
@@ -55,23 +70,34 @@ void setup() {
   Serial.begin(115200);
   delay(200);
 
-  Wire.begin();
+  Wire.begin(SDA_PIN, SCL_PIN);
 
-  if (!maxSensor.begin(Wire, I2C_SPEED_FAST)) {
-    Serial.println("MAX30102 not found. Check wiring.");
+  // Initialize OLED display
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println("SSD1306 allocation failed");
   } else {
-    uint8_t ledBrightness = 60; // 0..255
-    uint8_t sampleAverage = 4;  // 1, 2, 4, 8, 16, 32
-    uint8_t ledMode = 2;        // 1 = Red only, 2 = Red + IR
-    int sampleRate = kSampleRateHz;
-    int pulseWidth = 411;       // 69, 118, 215, 411
-    int adcRange = 4096;        // 2048, 4096, 8192, 16384
-
-    maxSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange);
-    maxSensor.setPulseAmplitudeRed(0x1F);
-    maxSensor.setPulseAmplitudeIR(0x1F);
-    maxSensor.setPulseAmplitudeGreen(0);
+    Serial.println("OLED display initialized!");
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.println("Initializing...");
+    display.display();
   }
+
+  //initialize max30102 heart rate sensor
+  if (!particleSensor.begin(Wire, I2C_SPEED_STANDARD)) {
+    Serial.println("MAX30102 was not found. Please check wiring/power.");
+    while (1);
+  }
+
+   Serial.println("MAX30102 Sensor Initialized Successfully!");
+
+  // Configure sensor
+  particleSensor.setup();  // Default configuration
+  particleSensor.setPulseAmplitudeRed(0x0A);   // Turn on Red LED
+  particleSensor.setPulseAmplitudeGreen(0);    // Turn off Green LED
+  particleSensor.setPulseAmplitudeIR(0x0A);    // Turn on IR LED
 
   rtc.Begin();
 
@@ -87,55 +113,108 @@ void setup() {
   RtcDateTime now = rtc.GetDateTime();
   SetAlarmForToday(now);
 
+  
   Serial.println("RTC initialized. Current time:");
   PrintDateTime(now);
 }
 
 void loop() {
   static uint32_t lastVitalsMs = 0;
+  static uint32_t lastDisplayMs = 0;
   static uint32_t lastTimeMs = 0;
   const uint32_t nowMs = millis();
+  
+  // Read sensor data
+  long irValue = particleSensor.getIR();
+  long redValue = particleSensor.getRed();
 
-  if (maxSensor.available()) {
-    uint32_t irValue = maxSensor.getIR();
-    uint32_t redValue = maxSensor.getRed();
-    maxSensor.nextSample();
+  // Check if finger is detected
+  if (irValue > kFingerThreshold) {
+    // Add to buffer
+    irBuffer[bufferIndex] = irValue;
+    redBuffer[bufferIndex] = redValue;
+    bufferIndex++;
 
-    if (irValue >= kFingerThreshold) {
-      irBuffer[sampleIndex] = irValue;
-      redBuffer[sampleIndex] = redValue;
-      sampleIndex++;
-
-      if (sampleIndex >= kBufferSize) {
-        sampleIndex = 0;
-        maxim_heart_rate_and_oxygen_saturation(irBuffer, kBufferSize,
-                                               redBuffer, &lastSpO2, &validSpO2,
-                                               &lastHeartRate, &validHeartRate);
-      }
-    } else {
-      validSpO2 = 0;
-      validHeartRate = 0;
+    // Process buffer when full
+    if (bufferIndex >= buffersize) {
+      bufferIndex = 0;
+      // Calculate heart rate and SpO2
+      maxim_heart_rate_and_oxygen_saturation(irBuffer, buffersize, redBuffer, 
+                                             &spo2, &validSpo2, 
+                                             &heartRate, &validHeartRate);
     }
+  } else {
+    // No finger detected, reset
+    validHeartRate = 0;
+    validSpo2 = 0;
   }
 
+  // Print heart rate and SpO2 every second
   if (nowMs - lastVitalsMs >= 1000) {
     lastVitalsMs = nowMs;
 
     Serial.print("HR: ");
     if (validHeartRate) {
-      Serial.print(lastHeartRate);
+      Serial.print(heartRate);
+      Serial.print(" bpm");
     } else {
       Serial.print("na");
     }
-    Serial.print(" bpm, SpO2: ");
-    if (validSpO2) {
-      Serial.print(lastSpO2);
-      Serial.println(" %");
+    
+    Serial.print(" | SpO2: ");
+    if (validSpo2) {
+      Serial.print(spo2);
+      Serial.print(" %");
     } else {
-      Serial.println("na");
+      Serial.print("na");
+    }
+    Serial.println();
+  }
+//Update OLED display every second
+  if (nowMs - lastDisplayMs >= 1000) {
+    lastDisplayMs = nowMs;
+    RtcDateTime now = rtc.GetDateTime();
+
+    if (rtc.IsDateTimeValid()) {
+      display.clearDisplay();
+      
+      // Display time (large)
+      display.setTextSize(2);
+      display.setCursor(10, 10);
+      char timeStr[10];
+      snprintf(timeStr, sizeof(timeStr), "%02u:%02u:%02u", 
+               now.Hour(), now.Minute(), now.Second());
+      display.println(timeStr);
+      
+      // Display date
+      display.setTextSize(1);
+      display.setCursor(10, 35);
+      char dateStr[12];
+      snprintf(dateStr, sizeof(dateStr), "%04u-%02u-%02u", 
+               now.Year(), now.Month(), now.Day());
+      display.println(dateStr);
+      
+      // Display HR and SpO2
+      display.setCursor(0, 50);
+      display.print("HR:");
+      if (validHeartRate) {
+        display.print(heartRate);
+      } else {
+        display.print("--");
+      }
+      display.print(" SpO2:");
+      if (validSpo2) {
+        display.print(spo2);
+      } else {
+        display.print("--");
+      }
+      
+      display.display();
     }
   }
 
+  // 
+  // Print time every 5 seconds
   if (nowMs - lastTimeMs >= 5000) {
     lastTimeMs = nowMs;
     RtcDateTime now = rtc.GetDateTime();
