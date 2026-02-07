@@ -10,6 +10,9 @@
             "includePath": [
                 "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/include",
                 "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/src",
+                "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/.pio/libdeps/esp32dev/SparkFun MAX3010x Pulse and Proximity Sensor Library/src",
+                "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
+                "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/.pio/libdeps/esp32dev/RTC/src",
                 "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                 "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
                 "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include/esp_additions/freertos",
@@ -238,7 +241,6 @@
                 "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                 "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 ""
             ],
             "browse": {
@@ -246,6 +248,9 @@
                 "path": [
                     "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/include",
                     "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/src",
+                    "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/.pio/libdeps/esp32dev/SparkFun MAX3010x Pulse and Proximity Sensor Library/src",
+                    "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
+                    "C:/Users/billy/Documents/GitHub/HackTheCoast2026/Firmware/.pio/libdeps/esp32dev/RTC/src",
                     "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                     "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
                     "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include/esp_additions/freertos",
@@ -474,7 +479,6 @@
                     "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
                     "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                    "C:/Users/billy/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     ""
                 ]
             },
