@@ -3,7 +3,7 @@
 A neck pillow that uses heart rate sensors to analyze sleep cycles and wake the user up at an optimal time
 
 <div align="center">
-    <img src="/pillow.jpg" style="border-radius: 10px; height: 65%; width: auto" />
+    <img src="/pillow.jpg" style="border-radius: 10px; width: 65%; height: auto" />
     <p><i>The best neck pillow in the world.</i></p>
 </div>
 
