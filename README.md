@@ -3,8 +3,8 @@
 A neck pillow that uses heart rate sensors to analyze sleep cycles and wake the user up at an optimal time
 
 <div align="center">
-    <img src="/pillow.jpg" style="border-radius: 10px" />
-    <p><i>Off the syllabus, on the map.</i></p>
+    <img src="/pillow.jpg" style="border-radius: 10px; height: 65%; width: auto" />
+    <p><i>The best neck pillow in the world.</i></p>
 </div>
 
 Team Members: Andy Fan, Jay Wen, Terry Shen
