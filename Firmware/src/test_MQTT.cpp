@@ -9,7 +9,7 @@ MAX30105 particleSensor;
 const char *kWifiSsid = "TP-LINK_26FE";
 const char *kWifiPass = "67147526";
 
-const char *kMqttHost = "192.168.0.102";
+const char *kMqttHost = "192.168.0.102"; //192.168.0.102
 const uint16_t kMqttPort = 1883;
 const char *kMqttTopic = "sensors/max30102/data";
 
