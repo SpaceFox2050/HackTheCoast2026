@@ -14,7 +14,7 @@ if client.connect("localhost", 1883, 60) != 0:
     print("Couldn't connect to the mqtt broker")
     sys.exit(1)
 
-client.subscribe("test_topic")
+client.subscribe("sensors/max30102/data")
 
 try:
     print("Press CTRL+C to exit...")
